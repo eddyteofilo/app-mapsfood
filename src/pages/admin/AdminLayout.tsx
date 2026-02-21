@@ -102,7 +102,7 @@ export default function AdminLayout() {
 
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
+        <div className="fixed inset-0 z-[1100] flex md:hidden">
           <div className="fixed inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <aside className="relative z-10 flex flex-col w-72 bg-sidebar border-r border-sidebar-border">
             <div className="flex items-center justify-between px-6 py-5 border-b border-sidebar-border">

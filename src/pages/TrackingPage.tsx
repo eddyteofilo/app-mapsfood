@@ -134,11 +134,17 @@ export default function TrackingPage() {
     <div className="min-h-screen bg-background animate-fade-in">
       {/* Header */}
       <div className="gradient-hero px-4 pt-10 pb-8 text-center flex flex-col items-center">
-        <img
-          src="/logo.png"
-          alt={settings.name || 'EmRota'}
-          className="h-12 w-auto object-contain mb-4 drop-shadow-md"
-        />
+        {settings.logoUrl ? (
+          <img
+            src={settings.logoUrl}
+            alt={settings.name}
+            className="h-12 w-auto object-contain mb-4 drop-shadow-md"
+          />
+        ) : (
+          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-4 shadow-lg">
+            <Pizza className="w-7 h-7 text-white" />
+          </div>
+        )}
         <h1 className="font-display text-2xl font-bold text-white">Pedido #{order.number}</h1>
       </div>
 

@@ -13,7 +13,7 @@ const STATUS_CONFIG: Record<OrderStatus, { icon: React.ElementType; className: s
 export default function Dashboard() {
   const { state } = useApp();
   const navigate = useNavigate();
-  const { orders, deliverers, products, categories } = state;
+  const { orders, deliverers, products, categories, settings } = state;
 
   const today = new Date().toDateString();
   const todayOrders = orders.filter(o => new Date(o.createdAt).toDateString() === today);
@@ -32,11 +32,17 @@ export default function Dashboard() {
     <div className="p-4 md:p-6 space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <img
-            src="/logo.png"
-            alt="Logo"
-            className="h-10 w-auto object-contain"
-          />
+          {settings.logoUrl ? (
+            <img
+              src={settings.logoUrl}
+              alt={settings.name}
+              className="h-10 w-auto object-contain"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-xl gradient-hero flex items-center justify-center shadow-glow">
+              <Pizza className="w-6 h-6 text-white" />
+            </div>
+          )}
           <div>
             <h1 className="font-display text-2xl font-bold text-foreground">Dashboard</h1>
             <p className="text-muted-foreground text-sm mt-0.5">Visão geral dos pedidos</p>
