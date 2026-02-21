@@ -7,6 +7,17 @@ import {
   Upload, ImageIcon, Share2, MousePointer2, Smartphone
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Loader2 } from 'lucide-react';
 
 function Section({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
   const [open, setOpen] = useState(true);
@@ -47,6 +58,10 @@ export default function AdminSettings() {
   const [settings, setSettings] = useState(state.settings);
   const [showApiKey, setShowApiKey] = useState(false);
   const [testingWebhook, setTestingWebhook] = useState(false);
+
+  // Reset Modal State
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const [isResetSaving, setIsResetSaving] = useState(false);
 
   function update(field: string, value: any) {
     setSettings(s => ({ ...s, [field]: value }));
@@ -581,20 +596,51 @@ export default function AdminSettings() {
           <p>Se você estiver enfrentando problemas para salvar produtos ou eles sumirem ao atualizar, use o botão abaixo para limpar o banco de dados. Isso apagará todos os cadastros atuais e as categorias.</p>
         </div>
         <button
-          onClick={() => {
-            if (confirm('⚠️ ATENÇÃO: Isso apagará TODOS os produtos e categorias salvos permanentemente. Tem certeza?')) {
-              dispatch({ type: 'RESET_PRODUCTS' });
-              // Reset categorias padrão no storage também
-              localStorage.removeItem('pt_categories');
-              toast({ title: 'Banco de dados limpo!', description: 'O app foi resetado para os valores padrão.' });
-              window.location.reload();
-            }
-          }}
+          onClick={() => setIsResetDialogOpen(true)}
           className="w-full flex items-center justify-center gap-2 bg-muted text-destructive border border-destructive/20 py-3 rounded-xl hover:bg-destructive hover:text-white transition-all text-sm font-semibold"
         >
           <Trash2 className="w-4 h-4" /> Limpar Banco de Dados (Produtos e Categorias)
         </button>
       </Section>
+
+      {/* Reset Confirmation */}
+      <AlertDialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+        <AlertDialogContent className="bg-card border-border shadow-2xl rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-xl font-bold text-destructive">
+              Limpar Banco de Dados?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              ⚠️ <span className="text-destructive font-bold">ATENÇÃO:</span> Isso apagará <span className="text-foreground font-semibold">TODOS</span> os produtos e categorias salvos permanentemente.
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4">
+            <AlertDialogCancel className="rounded-xl bg-muted border-none hover:bg-muted/80">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                setIsResetSaving(true);
+                try {
+                  dispatch({ type: 'RESET_PRODUCTS' });
+                  // Reset categorias padrão no storage também
+                  localStorage.removeItem('pt_categories');
+                  toast({ title: 'Banco de dados limpo!', description: 'O app foi resetado para os valores padrão.' });
+                  setTimeout(() => window.location.reload(), 1500);
+                } finally {
+                  setIsResetSaving(false);
+                  setIsResetDialogOpen(false);
+                }
+              }}
+              disabled={isResetSaving}
+              className="rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-lg px-6"
+            >
+              {isResetSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar Reset'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

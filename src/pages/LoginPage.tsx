@@ -107,6 +107,16 @@ export default function LoginPage() {
                   {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              <div className="flex justify-end mt-1">
+                <a
+                  href={`https://wa.me/5511999999999?text=Esqueci minha senha do PizzaTrack`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-primary hover:underline"
+                >
+                  Esqueceu a senha?
+                </a>
+              </div>
             </div>
 
             <button

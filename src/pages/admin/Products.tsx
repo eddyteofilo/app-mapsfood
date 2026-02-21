@@ -7,6 +7,16 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function Products() {
     const { state, dispatch } = useApp();
@@ -17,6 +27,11 @@ export default function Products() {
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
+    // Delete Modal State
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+    const [isDeleteSaving, setIsDeleteSaving] = useState(false);
+
     const filtered = products.filter(p => {
         const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -26,28 +41,34 @@ export default function Products() {
 
     const { sendWebhook } = useApp() as any;
 
-    async function deleteProduct(id: string) {
-        if (confirm('Tem certeza que deseja excluir este produto?')) {
-            setIsProcessing(id);
-            try {
-                const { error } = await supabase
-                    .from('products')
-                    .delete()
-                    .eq('id', id);
+    function openDeleteDialog(product: Product) {
+        setProductToDelete(product);
+        setIsDeleteDialogOpen(true);
+    }
 
-                if (error) throw error;
+    async function handleDeleteProduct() {
+        if (!productToDelete) return;
+        setIsDeleteSaving(true);
+        setIsProcessing(productToDelete.id);
+        try {
+            const { error } = await supabase
+                .from('products')
+                .delete()
+                .eq('id', productToDelete.id);
 
-                const productToDelete = products.find(p => p.id === id);
-                dispatch({ type: 'DELETE_PRODUCT', payload: id });
-                if (sendWebhook && productToDelete) {
-                    sendWebhook({ ...productToDelete, items: [] } as any, 'product_deleted');
-                }
-                toast({ title: 'Produto removido com sucesso' });
-            } catch (error: any) {
-                toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' });
-            } finally {
-                setIsProcessing(null);
+            if (error) throw error;
+
+            dispatch({ type: 'DELETE_PRODUCT', payload: productToDelete.id });
+            if (sendWebhook) {
+                sendWebhook({ ...productToDelete, items: [] } as any, 'product_deleted');
             }
+            toast({ title: 'Produto removido com sucesso' });
+            setIsDeleteDialogOpen(false);
+        } catch (error: any) {
+            toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' });
+        } finally {
+            setIsDeleteSaving(false);
+            setIsProcessing(null);
         }
     }
 
@@ -209,7 +230,7 @@ export default function Products() {
                                             <Edit className="w-4 h-4" />
                                         </Link>
                                         <button
-                                            onClick={() => deleteProduct(product.id)}
+                                            onClick={() => openDeleteDialog(product)}
                                             disabled={isProcessing === product.id}
                                             className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all disabled:opacity-50"
                                         >
@@ -223,6 +244,33 @@ export default function Products() {
                     ))}
                 </div>
             )}
+
+            {/* Delete Confirmation */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent className="bg-card border-border shadow-2xl rounded-2xl">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="font-display text-xl font-bold text-destructive">
+                            Excluir Produto?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground">
+                            Tem certeza que deseja excluir o produto <span className="text-foreground font-semibold">"{productToDelete?.name}"</span>?
+                            Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-4">
+                        <AlertDialogCancel className="rounded-xl bg-muted border-none hover:bg-muted/80">
+                            Cancelar
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDeleteProduct}
+                            disabled={isDeleteSaving}
+                            className="rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-lg px-6"
+                        >
+                            {isDeleteSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Excluir'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

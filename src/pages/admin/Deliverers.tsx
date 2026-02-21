@@ -1,8 +1,19 @@
 import { useApp } from '@/hooks/use-app';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, MoreVertical, Edit2, Trash2, Bike, User, Phone, Mail, FileText } from 'lucide-react';
+import { Plus, Search, MoreVertical, Edit2, Trash2, Bike, User, Phone, Mail, FileText, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Deliverer } from '@/types';
 
 export default function Deliverers() {
     const { state, dispatch } = useApp();
@@ -10,17 +21,28 @@ export default function Deliverers() {
     const { toast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
 
-    const filtered = state.deliverers.filter(d =>
-        d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        d.vehicle.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // Delete Modal State
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [delivererToDelete, setDelivererToDelete] = useState<Deliverer | null>(null);
+    const [isDeleteSaving, setIsDeleteSaving] = useState(false);
 
-    function deleteDeliverer(id: string) {
-        if (confirm('Tem certeza que deseja excluir este entregador?')) {
+    function openDeleteDialog(deliverer: Deliverer) {
+        setDelivererToDelete(deliverer);
+        setIsDeleteDialogOpen(true);
+    }
+
+    async function handleDeleteConfirm() {
+        if (!delivererToDelete) return;
+        setIsDeleteSaving(true);
+        try {
             // Nota: Precisamos adicionar a action DELETE_DELIVERER no AppContext se não existir
-            // Por enquanto vou usar uma lógica genérica ou assumir que vou adicionar
-            dispatch({ type: 'DELETE_DELIVERER' as any, payload: id });
+            dispatch({ type: 'DELETE_DELIVERER' as any, payload: delivererToDelete.id });
             toast({ title: 'Entregador excluído!' });
+            setIsDeleteDialogOpen(false);
+        } catch (err: any) {
+            toast({ title: 'Erro ao excluir', description: err.message, variant: 'destructive' });
+        } finally {
+            setIsDeleteSaving(false);
         }
     }
 
@@ -94,8 +116,8 @@ export default function Deliverers() {
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${deliverer.available
-                                                ? 'bg-green-500/10 text-green-500'
-                                                : 'bg-yellow-500/10 text-yellow-500'
+                                            ? 'bg-green-500/10 text-green-500'
+                                            : 'bg-yellow-500/10 text-yellow-500'
                                             }`}>
                                             <div className={`w-1.5 h-1.5 rounded-full ${deliverer.available ? 'bg-green-500' : 'bg-yellow-500'}`} />
                                             {deliverer.available ? 'Disponível' : 'Ocupado'}
@@ -111,7 +133,7 @@ export default function Deliverers() {
                                                 <Edit2 className="w-4 h-4" />
                                             </button>
                                             <button
-                                                onClick={() => deleteDeliverer(deliverer.id)}
+                                                onClick={() => openDeleteDialog(deliverer)}
                                                 className="p-2 hover:bg-destructive/10 rounded-lg text-muted-foreground hover:text-destructive transition-all"
                                                 title="Excluir"
                                             >
@@ -132,6 +154,33 @@ export default function Deliverers() {
                     </table>
                 </div>
             </div>
+
+            {/* Delete Confirmation */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent className="bg-card border-border shadow-2xl rounded-2xl">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="font-display text-xl font-bold text-destructive">
+                            Excluir Entregador?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground">
+                            Tem certeza que deseja excluir o entregador <span className="text-foreground font-semibold">"{delivererToDelete?.name}"</span>?
+                            Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-4">
+                        <AlertDialogCancel className="rounded-xl bg-muted border-none hover:bg-muted/80">
+                            Cancelar
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDeleteConfirm}
+                            disabled={isDeleteSaving}
+                            className="rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-lg px-6"
+                        >
+                            {isDeleteSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Excluir'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

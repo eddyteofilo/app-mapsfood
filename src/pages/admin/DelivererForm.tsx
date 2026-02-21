@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '@/hooks/use-app';
 import { Deliverer } from '@/types';
 import { supabase } from '@/lib/supabase';
-import { ArrowLeft, User, Phone, Mail, FileText, Bike, Hash, Palette, Save, Loader2, Lock, Key } from 'lucide-react';
+import { ArrowLeft, User, Phone, Mail, FileText, Bike, Hash, Palette, Save, Loader2, Lock, Key, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function DelivererForm() {
@@ -28,6 +28,7 @@ export default function DelivererForm() {
         username: '',
         password: '',
     });
+    const [showPass, setShowPass] = useState(false);
 
     useEffect(() => {
         if (existing) {
@@ -304,12 +305,29 @@ export default function DelivererForm() {
                                     <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                     <input
                                         required
-                                        type="password"
+                                        type={showPass ? 'text' : 'password'}
                                         value={form.password}
                                         onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
                                         placeholder="••••••••"
-                                        className="w-full bg-muted/50 border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                                        className="w-full bg-muted/50 border border-border rounded-xl pl-10 pr-12 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                                     />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPass(!showPass)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                        {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    </button>
+                                </div>
+                                <div className="flex justify-end mt-1">
+                                    <a
+                                        href={`https://wa.me/5511999999999?text=Esqueci minha senha de gerente do PizzaTrack`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[10px] text-primary hover:underline"
+                                    >
+                                        Esqueceu a senha?
+                                    </a>
                                 </div>
                             </div>
                         </div>

@@ -1,8 +1,27 @@
 import { useState } from 'react';
 import { useApp } from '@/hooks/use-app';
-import { Tag, Plus, Edit, Trash2, Package } from 'lucide-react';
+import { Tag, Plus, Edit, Trash2, Package, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export default function Categories() {
     const { state, dispatch } = useApp();
@@ -10,6 +29,17 @@ export default function Categories() {
     const { toast } = useToast();
     const [newName, setNewName] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+
+    // Edit Modal State
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [editingCat, setEditingCat] = useState<any>(null);
+    const [editValue, setEditValue] = useState('');
+    const [isEditSaving, setIsEditSaving] = useState(false);
+
+    // Delete Modal State
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [catToDelete, setCatToDelete] = useState<any>(null);
+    const [isDeleteSaving, setIsDeleteSaving] = useState(false);
 
     const { sendWebhook } = useApp() as any;
 
@@ -40,44 +70,60 @@ export default function Categories() {
         }
     }
 
-    async function editCategory(cat: any) {
-        const editedName = prompt('Novo nome para a categoria:', cat.name);
-        if (editedName && editedName.trim()) {
-            try {
-                const { error } = await supabase
-                    .from('categories')
-                    .update({ name: editedName.trim() })
-                    .eq('id', cat.id);
+    function openEditDialog(cat: any) {
+        setEditingCat(cat);
+        setEditValue(cat.name);
+        setIsEditDialogOpen(true);
+    }
 
-                if (error) throw error;
+    async function handleEdit() {
+        if (!editValue.trim() || !editingCat) return;
+        setIsEditSaving(true);
+        try {
+            const { error } = await supabase
+                .from('categories')
+                .update({ name: editValue.trim() })
+                .eq('id', editingCat.id);
 
-                const updated = { ...cat, name: editedName.trim() };
-                dispatch({ type: 'UPDATE_CATEGORY', payload: updated });
+            if (error) throw error;
 
-                if (sendWebhook) sendWebhook({ name: updated.name, id: updated.id, items: [] } as any, 'category_updated');
-                toast({ title: 'Categoria atualizada!' });
-            } catch (error: any) {
-                toast({ title: 'Erro ao atualizar', description: error.message, variant: 'destructive' });
-            }
+            const updated = { ...editingCat, name: editValue.trim() };
+            dispatch({ type: 'UPDATE_CATEGORY', payload: updated });
+
+            if (sendWebhook) sendWebhook({ name: updated.name, id: updated.id, items: [] } as any, 'category_updated');
+            toast({ title: 'Categoria atualizada!' });
+            setIsEditDialogOpen(false);
+        } catch (error: any) {
+            toast({ title: 'Erro ao atualizar', description: error.message, variant: 'destructive' });
+        } finally {
+            setIsEditSaving(false);
         }
     }
 
-    async function deleteCategory(cat: any) {
-        if (confirm(`Excluir a categoria "${cat.name}"?`)) {
-            try {
-                const { error } = await supabase
-                    .from('categories')
-                    .delete()
-                    .eq('id', cat.id);
+    function openDeleteDialog(cat: any) {
+        setCatToDelete(cat);
+        setIsDeleteDialogOpen(true);
+    }
 
-                if (error) throw error;
+    async function handleDelete() {
+        if (!catToDelete) return;
+        setIsDeleteSaving(true);
+        try {
+            const { error } = await supabase
+                .from('categories')
+                .delete()
+                .eq('id', catToDelete.id);
 
-                dispatch({ type: 'DELETE_CATEGORY', payload: cat.id });
-                if (sendWebhook) sendWebhook({ name: cat.name, id: cat.id, items: [] } as any, 'category_deleted');
-                toast({ title: 'Categoria excluída' });
-            } catch (error: any) {
-                toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' });
-            }
+            if (error) throw error;
+
+            dispatch({ type: 'DELETE_CATEGORY', payload: catToDelete.id });
+            if (sendWebhook) sendWebhook({ name: catToDelete.name, id: catToDelete.id, items: [] } as any, 'category_deleted');
+            toast({ title: 'Categoria excluída' });
+            setIsDeleteDialogOpen(false);
+        } catch (error: any) {
+            toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' });
+        } finally {
+            setIsDeleteSaving(false);
         }
     }
 
@@ -134,13 +180,13 @@ export default function Categories() {
                             </div>
                             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button
-                                    onClick={() => editCategory(cat)}
+                                    onClick={() => openEditDialog(cat)}
                                     className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
                                 >
                                     <Edit className="w-4 h-4" />
                                 </button>
                                 <button
-                                    onClick={() => deleteCategory(cat)}
+                                    onClick={() => openDeleteDialog(cat)}
                                     className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
                                 >
                                     <Trash2 className="w-4 h-4" />
@@ -150,6 +196,70 @@ export default function Categories() {
                     ))
                 )}
             </div>
+
+            {/* Edit Modal */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent className="sm:max-w-md bg-card border-border shadow-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="font-display text-xl font-bold">Editar Categoria</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-muted-foreground">Nome da Categoria</label>
+                            <Input
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleEdit()}
+                                className="bg-muted border-border focus:ring-primary/50"
+                                autoFocus
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsEditDialogOpen(false)}
+                            className="flex-1 rounded-xl"
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            onClick={handleEdit}
+                            disabled={isEditSaving || !editValue.trim()}
+                            className="flex-1 gradient-hero text-white rounded-xl shadow-glow"
+                        >
+                            {isEditSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent className="bg-card border-border shadow-2xl rounded-2xl">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="font-display text-xl font-bold text-destructive">
+                            Excluir Categoria?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground">
+                            Tem certeza que deseja excluir a categoria <span className="text-foreground font-semibold">"{catToDelete?.name}"</span>?
+                            Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-4">
+                        <AlertDialogCancel className="rounded-xl bg-muted border-none hover:bg-muted/80">
+                            Cancelar
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDelete}
+                            disabled={isDeleteSaving}
+                            className="rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-lg px-6"
+                        >
+                            {isDeleteSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Excluir'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

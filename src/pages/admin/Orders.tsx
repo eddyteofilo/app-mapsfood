@@ -5,6 +5,17 @@ import { Order, OrderStatus, STATUS_LABELS, STATUS_ORDER, PAYMENT_LABELS } from 
 import { Plus, Search, Filter, Trash2, Edit, ChevronRight, Phone, MapPin, Truck, MessageCircle, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Loader2 } from 'lucide-react';
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
   received: 'status-received',
@@ -20,6 +31,11 @@ export default function Orders() {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<OrderStatus | 'all'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Delete Modal State
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
+  const [isDeleteSaving, setIsDeleteSaving] = useState(false);
 
   const filtered = state.orders
     .filter(o => filterStatus === 'all' || o.status === filterStatus)
@@ -77,16 +93,24 @@ export default function Orders() {
     }
   }
 
-  async function handleDelete(order: Order) {
-    if (confirm(`Excluir pedido #${order.number}?`)) {
-      try {
-        const { error } = await supabase.from('orders').delete().eq('id', order.id);
-        if (error) throw error;
-        toast({ title: 'Pedido excluído' });
-      } catch (err: any) {
-        console.error('[Supabase Delete Error]', err);
-        toast({ title: 'Erro ao excluir pedido', description: err.message, variant: 'destructive' });
-      }
+  function openDeleteDialog(order: Order) {
+    setOrderToDelete(order);
+    setIsDeleteDialogOpen(true);
+  }
+
+  async function handleDeleteConfirm() {
+    if (!orderToDelete) return;
+    setIsDeleteSaving(true);
+    try {
+      const { error } = await supabase.from('orders').delete().eq('id', orderToDelete.id);
+      if (error) throw error;
+      toast({ title: 'Pedido excluído' });
+      setIsDeleteDialogOpen(false);
+    } catch (err: any) {
+      console.error('[Supabase Delete Error]', err);
+      toast({ title: 'Erro ao excluir pedido', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsDeleteSaving(false);
     }
   }
 
@@ -280,7 +304,7 @@ export default function Orders() {
                           <Edit className="w-3 h-3" /> Editar
                         </button>
                         <button
-                          onClick={() => handleDelete(order)}
+                          onClick={() => openDeleteDialog(order)}
                           className="flex items-center gap-1.5 text-xs bg-destructive/10 text-destructive px-3 py-2 rounded-lg hover:bg-destructive/20 transition-colors"
                         >
                           <Trash2 className="w-3 h-3" /> Excluir
@@ -307,6 +331,33 @@ export default function Orders() {
           })}
         </div>
       )}
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent className="bg-card border-border shadow-2xl rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-xl font-bold text-destructive">
+              Excluir Pedido?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              Tem certeza que deseja excluir o pedido <span className="text-foreground font-semibold">#{orderToDelete?.number}</span>?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4">
+            <AlertDialogCancel className="rounded-xl bg-muted border-none hover:bg-muted/80">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={isDeleteSaving}
+              className="rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-lg px-6"
+            >
+              {isDeleteSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
