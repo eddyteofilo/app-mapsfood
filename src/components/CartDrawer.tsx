@@ -96,6 +96,7 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
                             customerPhone: customer.phone,
                             paymentMethod: customer.payment,
                             amount: total,
+                            accessToken: settings.mercadopagoAccessToken,
                             items: cart.map(i => ({
                                 name: i.name,
                                 quantity: i.quantity,
@@ -104,12 +105,10 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
                         }
                     });
 
-                    if (funcError) {
-                        const errorMsg = funcData?.error || funcError.message;
+                    if (funcError || funcData?.error) {
+                        const errorMsg = funcData?.error || funcError?.message || 'Erro desconhecido no processamento';
                         throw new Error(`Erro no Pagamento: ${errorMsg}`);
                     }
-
-                    if (funcData?.error) throw new Error(funcData.error);
 
                     data = funcData;
                 }
