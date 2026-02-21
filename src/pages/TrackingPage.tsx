@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useApp } from '@/hooks/use-app';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
