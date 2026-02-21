@@ -106,6 +106,7 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
                     });
 
                     if (funcError || funcData?.error) {
+                        console.error('[Mercado Pago Error]', funcData);
                         const errorMsg = funcData?.error || funcError?.message || 'Erro desconhecido no processamento';
                         throw new Error(`Erro no Pagamento: ${errorMsg}`);
                     }
