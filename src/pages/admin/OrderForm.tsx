@@ -95,16 +95,39 @@ export default function OrderForm() {
     }
     setSearching(true);
     try {
-      const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(form.deliveryAddress)}&limit=1`);
-      const data = await resp.json();
-      if (data && data.length > 0) {
-        const { lat, lon } = data[0];
-        setForm(f => ({ ...f, deliveryCoords: [parseFloat(lat), parseFloat(lon)] }));
-        toast({ title: '📍 Localização encontrada!' });
+      if (state.settings.googleMapsApiKey) {
+        // Usar Google Maps Geocoding
+        const resp = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(form.deliveryAddress)}&key=${state.settings.googleMapsApiKey}`
+        );
+        const data = await resp.json();
+
+        if (data.status === 'OK' && data.results.length > 0) {
+          const { lat, lng } = data.results[0].geometry.location;
+          setForm(f => ({ ...f, deliveryCoords: [lat, lng] }));
+          toast({ title: '📍 Google Maps: Localização encontrada!' });
+        } else {
+          console.warn('[Google Geocode Error]', data);
+          toast({
+            title: 'Endereço não encontrado (Google)',
+            description: data.error_message || 'Tente ser mais específico.',
+            variant: 'destructive'
+          });
+        }
       } else {
-        toast({ title: 'Endereço não encontrado no mapa', description: 'Tente ser mais específico ou clique no mapa.' });
+        // Fallback para Nominatim (OSM)
+        const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(form.deliveryAddress)}&limit=1`);
+        const data = await resp.json();
+        if (data && data.length > 0) {
+          const { lat, lon } = data[0];
+          setForm(f => ({ ...f, deliveryCoords: [parseFloat(lat), parseFloat(lon)] }));
+          toast({ title: '📍 OSM: Localização encontrada!' });
+        } else {
+          toast({ title: 'Endereço não encontrado no mapa', description: 'Tente ser mais específico ou clique no mapa.' });
+        }
       }
     } catch (err) {
+      console.error('[Geocode Error]', err);
       toast({ title: 'Erro ao buscar endereço', variant: 'destructive' });
     } finally {
       setSearching(false);

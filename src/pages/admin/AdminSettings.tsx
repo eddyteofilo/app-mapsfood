@@ -134,6 +134,20 @@ export default function AdminSettings() {
               className={inputCls}
             />
           </Field>
+          <button
+            type="button"
+            onClick={() => {
+              if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                  update('coords', [pos.coords.latitude, pos.coords.longitude]);
+                  toast({ title: '📍 Coordenadas atualizadas!' });
+                });
+              }
+            }}
+            className="col-span-2 text-xs text-primary hover:underline flex items-center justify-center gap-1 mt-1"
+          >
+            <MapPin className="w-3 h-3" /> Usar minha localização atual (GPS)
+          </button>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Abre">
@@ -290,6 +304,32 @@ export default function AdminSettings() {
             </ul>
           </div>
         )}
+      </Section>
+
+      {/* Google Maps */}
+      <Section title="Google Maps Platform" icon={MapPin}>
+        <div className="p-3 bg-blue-500/5 border border-blue-500/20 rounded-xl text-xs text-muted-foreground">
+          <p className="font-semibold text-foreground mb-1">Geocodificação e Mapas</p>
+          <p>O Google Maps é usado para encontrar a localização exata dos clientes a partir do endereço e mostrar o trajeto no mapa de rastreio.</p>
+          <a href="https://console.cloud.google.com/google/maps-apis/credentials" target="_blank" rel="noopener noreferrer" className="text-primary flex items-center gap-1 mt-1 hover:underline">
+            <ExternalLink className="w-3 h-3" /> Obter API Key no Google Cloud
+          </a>
+        </div>
+
+        <Field label="Google Maps API Key" hint="Necessário para Geocoding e Mapas Premium">
+          <div className="relative">
+            <input
+              type={showApiKey ? 'text' : 'password'}
+              value={settings.googleMapsApiKey}
+              onChange={e => update('googleMapsApiKey', e.target.value)}
+              className={inputCls + ' pr-10'}
+              placeholder="AIzaSy..."
+            />
+            <button type="button" onClick={() => setShowApiKey(!showApiKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+        </Field>
       </Section>
 
       <button

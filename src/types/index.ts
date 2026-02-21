@@ -89,6 +89,8 @@ export interface PizzeriaSettings {
   whatsappApiKey: string;
   whatsappInstanceName: string;
   whatsappPhoneNumberId: string; // For official API
+  // Google Maps
+  googleMapsApiKey: string;
 }
 
 export interface CartItem extends Product {
@@ -139,6 +141,7 @@ export const DEFAULT_SETTINGS: PizzeriaSettings = {
   whatsappApiKey: '',
   whatsappInstanceName: '',
   whatsappPhoneNumberId: '',
+  googleMapsApiKey: '',
 };
 
 export const MOCK_DELIVERERS: Deliverer[] = [
