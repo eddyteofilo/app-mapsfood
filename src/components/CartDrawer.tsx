@@ -81,7 +81,7 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
 
         try {
             if (isOnlinePayment) {
-                const orderId = Math.random().toString(36).substring(2, 15);
+                const orderId = crypto.randomUUID();
                 const orderNum = state.orders.length + 1001;
 
                 let data;
