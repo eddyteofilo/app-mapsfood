@@ -15,10 +15,22 @@ const NAV = [
   { to: '/admin/settings', icon: Settings, label: 'Configurações' },
 ];
 
+import { useEffect, useRef } from 'react';
+
 export default function AdminLayout() {
   const { state, dispatch } = useApp();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const prevOrdersCount = useRef(state.orders.length);
+
+  // Som de Notificação
+  useEffect(() => {
+    if (state.orders.length > prevOrdersCount.current) {
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+      audio.play().catch(e => console.log('Audio play failed:', e));
+    }
+    prevOrdersCount.current = state.orders.length;
+  }, [state.orders.length]);
 
   const activeOrders = state.orders.filter(o => o.status !== 'delivered').length;
 

@@ -493,6 +493,87 @@ export default function AdminSettings() {
         <Save className="w-4 h-4" /> Salvar todas as configurações
       </button>
 
+      {/* Mercado Pago */}
+      <Section title="Mercado Pago (PIX Automático)" icon={Smartphone}>
+        <div className="p-3 bg-sky-500/5 border border-sky-500/20 rounded-xl text-xs text-muted-foreground space-y-2">
+          <p className="font-semibold text-sky-600">Pagamento Online com Baixa Automática</p>
+          <p>Ao ativar o Mercado Pago, seus clientes poderão pagar via PIX diretamente no site. O pedido será aprovado automaticamente assim que o pagamento for confirmado.</p>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-foreground">Geral (On/Off)</span>
+            <button
+              onClick={() => update('mercadopagoEnabled', !settings.mercadopagoEnabled)}
+              className={`relative w-11 h-6 rounded-full transition-colors ${settings.mercadopagoEnabled ? 'bg-primary' : 'bg-muted-foreground/30'}`}
+            >
+              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${settings.mercadopagoEnabled ? 'left-6' : 'left-1'}`} />
+            </button>
+          </div>
+
+          {settings.mercadopagoEnabled && (
+            <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-xl">
+              <div className="space-y-2">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center block">Aceitar PIX</span>
+                <button
+                  onClick={() => update('mercadopagoPixEnabled', !settings.mercadopagoPixEnabled)}
+                  className={`relative w-full h-8 rounded-lg transition-colors flex items-center justify-center font-bold text-xs ${settings.mercadopagoPixEnabled ? 'bg-primary/20 border-primary text-primary border' : 'bg-muted border border-border text-muted-foreground'}`}
+                >
+                  {settings.mercadopagoPixEnabled ? 'SIM' : 'NÃO'}
+                </button>
+              </div>
+              <div className="space-y-2">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center block">Aceitar Cartão</span>
+                <button
+                  onClick={() => update('mercadopagoCardEnabled', !settings.mercadopagoCardEnabled)}
+                  className={`relative w-full h-8 rounded-lg transition-colors flex items-center justify-center font-bold text-xs ${settings.mercadopagoCardEnabled ? 'bg-primary/20 border-primary text-primary border' : 'bg-muted border border-border text-muted-foreground'}`}
+                >
+                  {settings.mercadopagoCardEnabled ? 'SIM' : 'NÃO'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {settings.mercadopagoEnabled && (
+          <div className="space-y-4 animate-fade-in">
+            <Field label="Public Key" hint="Usada para gerar o formulário de pagamento com segurança.">
+              <input
+                value={settings.mercadopagoPublicKey}
+                onChange={e => update('mercadopagoPublicKey', e.target.value)}
+                className={inputCls}
+                placeholder="APP_USR-..."
+              />
+            </Field>
+
+            <Field label="Access Token" hint="Token secreto para processar pagamentos e receber notificações.">
+              <div className="relative">
+                <input
+                  type={showApiKey ? 'text' : 'password'}
+                  value={settings.mercadopagoAccessToken}
+                  onChange={e => update('mercadopagoAccessToken', e.target.value)}
+                  className={inputCls + ' pr-10'}
+                  placeholder="APP_USR-..."
+                />
+                <button type="button" onClick={() => setShowApiKey(!showApiKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </Field>
+
+            <div className="p-3 bg-muted rounded-xl text-[10px] text-muted-foreground">
+              <p className="font-bold mb-1">Passo a passo:</p>
+              <ol className="list-decimal list-inside space-y-1">
+                <li>Acesse o <a href="https://www.mercadopago.com.br/developers/panel" target="_blank" rel="noreferrer" className="text-primary hover:underline">Painel de Desenvolvedores</a> do Mercado Pago.</li>
+                <li>Crie uma nova aplicação ou selecione uma existente.</li>
+                <li>Vá em "Credenciais de Produção" para obter os tokens acima.</li>
+                <li>Configure o Webhook no seu dashboard do MP para a URL do seu n8n para automação total.</li>
+              </ol>
+            </div>
+          </div>
+        )}
+      </Section>
+
       {/* Manutenção */}
       <Section title="Manutenção" icon={Trash2}>
         <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-xl text-xs text-muted-foreground space-y-2">

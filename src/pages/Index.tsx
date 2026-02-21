@@ -153,7 +153,11 @@ export default function Index() {
             <main className="max-w-7xl mx-auto px-4 py-8">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filtered.map(product => {
-                        const finalPrice = (product.isPromo && product.promoPrice) ? product.promoPrice : product.price;
+                        // Calcula o menor preço disponível (Produto ou Variação)
+                        const variantPrices = product.variants?.filter(v => (v.price ?? 0) > 0).map(v => v.price!) || [];
+                        const basePrice = (product.isPromo && product.promoPrice) ? product.promoPrice : product.price;
+                        const finalPrice = variantPrices.length > 0 ? Math.min(basePrice, ...variantPrices) : basePrice;
+
                         return (
                             <div
                                 key={product.id}
@@ -168,8 +172,10 @@ export default function Index() {
                                         </div>
                                     )}
                                     {product.isPromo && (
-                                        <div className="absolute top-4 left-4 bg-secondary text-secondary-foreground text-xs font-black px-3 py-1.5 rounded-xl flex items-center gap-1 shadow-lg ring-2 ring-white/20">
-                                            <Tag className="w-3.5 h-3.5" /> PROMOÇÃO
+                                        <div className="absolute top-0 right-0 z-10">
+                                            <div className="bg-primary text-white text-[10px] font-black px-8 py-1.5 rotate-45 translate-x-[28%] translate-y-[50%] shadow-2xl flex items-center justify-center gap-1 uppercase tracking-tighter">
+                                                <Tag className="w-3 h-3 -rotate-45" /> PROMO
+                                            </div>
                                         </div>
                                     )}
                                 </div>

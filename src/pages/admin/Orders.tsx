@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Order, OrderStatus, STATUS_LABELS, STATUS_ORDER, PAYMENT_LABELS } from '@/types';
 import { Plus, Search, Filter, Trash2, Edit, ChevronRight, Phone, MapPin, Truck, MessageCircle, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
   received: 'status-received',

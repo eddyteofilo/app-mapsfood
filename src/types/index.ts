@@ -96,6 +96,12 @@ export interface PizzeriaSettings {
   faviconUrl?: string;
   ogImageUrl?: string;
   pwaIconUrl?: string;
+  // Mercado Pago
+  mercadopagoEnabled: boolean;
+  mercadopagoPixEnabled: boolean;
+  mercadopagoCardEnabled: boolean;
+  mercadopagoPublicKey: string;
+  mercadopagoAccessToken: string;
 }
 
 export interface CartItem extends Product {
@@ -151,6 +157,11 @@ export const DEFAULT_SETTINGS: PizzeriaSettings = {
   faviconUrl: '',
   ogImageUrl: '',
   pwaIconUrl: '',
+  mercadopagoEnabled: true,
+  mercadopagoPixEnabled: true,
+  mercadopagoCardEnabled: true,
+  mercadopagoPublicKey: '',
+  mercadopagoAccessToken: '',
 };
 
 export const MOCK_DELIVERERS: Deliverer[] = [

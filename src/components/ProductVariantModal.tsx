@@ -61,13 +61,14 @@ export default function ProductVariantModal({
                                             Opção selecionável
                                         </p>
                                     </div>
-                                    {variant.price && variant.price > 0 ? (
-                                        <span className="text-sm font-black text-primary">
-                                            + R$ {variant.price.toFixed(2)}
-                                        </span>
-                                    ) : (
-                                        <span className="text-[10px] font-black text-muted-foreground uppercase">Grátis</span>
-                                    )}
+                                    {(() => {
+                                        const variantPrice = variant.price && variant.price > 0 ? variant.price : product.price;
+                                        return (
+                                            <span className="text-sm font-black text-primary">
+                                                R$ {variantPrice.toFixed(2)}
+                                            </span>
+                                        );
+                                    })()}
                                 </button>
                             ))}
                         </div>
