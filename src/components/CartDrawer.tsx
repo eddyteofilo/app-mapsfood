@@ -4,7 +4,7 @@ import { ShoppingBag, X, Plus, Minus, Send, MapPin, User, Wallet } from 'lucide-
 import { useToast } from '@/hooks/use-toast';
 
 export default function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
-    const { state, dispatch } = useApp();
+    const { state, dispatch, sendWebhook } = useApp();
     const { cart, settings } = state;
     const { toast } = useToast();
 
@@ -75,10 +75,10 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
             }))
         } as any;
 
-        const { sendWebhook } = useApp() as any;
         if (sendWebhook) {
             sendWebhook(orderData, 'order_client_request');
         }
+
 
         window.open(whatsappUrl, '_blank');
         dispatch({ type: 'CLEAR_CART' });

@@ -69,9 +69,11 @@ type Action =
   | { type: 'UPDATE_SETTINGS'; payload: Partial<PizzeriaSettings> }
   | { type: 'ADD_DELIVERER'; payload: Deliverer }
   | { type: 'UPDATE_DELIVERER'; payload: Deliverer }
+  | { type: 'DELETE_DELIVERER'; payload: string }
   | { type: 'ADD_PRODUCT'; payload: AppState['products'][0] }
   | { type: 'UPDATE_PRODUCT'; payload: AppState['products'][0] }
   | { type: 'DELETE_PRODUCT'; payload: string }
+  | { type: 'RESET_PRODUCTS' }
   | { type: 'ADD_CATEGORY'; payload: AppState['categories'][0] }
   | { type: 'UPDATE_CATEGORY'; payload: AppState['categories'][0] }
   | { type: 'DELETE_CATEGORY'; payload: string }
@@ -142,6 +144,11 @@ function reducer(state: AppState, action: Action): AppState {
     }
     case 'UPDATE_DELIVERER': {
       const deliverers = state.deliverers.map(d => d.id === action.payload.id ? action.payload : d);
+      saveToStorage(STORAGE_KEYS.deliverers, deliverers);
+      return { ...state, deliverers };
+    }
+    case 'DELETE_DELIVERER': {
+      const deliverers = state.deliverers.filter(d => d.id !== action.payload);
       saveToStorage(STORAGE_KEYS.deliverers, deliverers);
       return { ...state, deliverers };
     }

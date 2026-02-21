@@ -12,7 +12,12 @@ export interface Deliverer {
   id: string;
   name: string;
   phone: string;
-  vehicle: string;
+  email?: string;
+  document?: string;
+  vehicle: string; // Resumo do veículo (ex: "Moto Honda CG")
+  vehiclePlate?: string;
+  vehicleModel?: string;
+  vehicleColor?: string;
   available: boolean;
   currentLocation?: [number, number]; // [lat, lng]
 }

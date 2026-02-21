@@ -1,13 +1,14 @@
 import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
 import { useApp } from '@/hooks/use-app';
 import {
-  LayoutDashboard, ShoppingBag, Map, Settings, LogOut, Pizza, Menu, X, Bell, Plus, Package, Tag
+  LayoutDashboard, ShoppingBag, Map, Settings, LogOut, Pizza, Menu, X, Bell, Plus, Package, Tag, Users
 } from 'lucide-react';
 import { useState } from 'react';
 
 const NAV = [
   { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
   { to: '/admin/orders', icon: ShoppingBag, label: 'Pedidos' },
+  { to: '/admin/deliverers', icon: Users, label: 'Entregadores' },
   { to: '/admin/categories', icon: Tag, label: 'Categorias' },
   { to: '/admin/products', icon: Package, label: 'Produtos' },
   { to: '/admin/map', icon: Map, label: 'Mapa ao Vivo' },
@@ -135,8 +136,11 @@ export default function AdminLayout() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
         <header className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-border bg-card/50 backdrop-blur-sm">
-          <button className="md:hidden text-muted-foreground hover:text-foreground" onClick={() => setMobileOpen(true)}>
-            <Menu className="w-5 h-5" />
+          <button
+            className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-muted text-muted-foreground hover:text-foreground active:scale-95 transition-all outline-none"
+            onClick={() => setMobileOpen(true)}
+          >
+            <Menu className="w-6 h-6" />
           </button>
           <Link to="/admin" className="hidden md:flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors group">
             <Pizza className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />

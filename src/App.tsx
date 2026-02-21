@@ -15,6 +15,8 @@ import AdminLayout from "@/pages/admin/AdminLayout";
 import Dashboard from "@/pages/admin/Dashboard";
 import Orders from "@/pages/admin/Orders";
 import OrderForm from "@/pages/admin/OrderForm";
+import Deliverers from "@/pages/admin/Deliverers";
+import DelivererForm from "@/pages/admin/DelivererForm";
 import AdminMapPage from "@/pages/admin/AdminMapPage";
 import AdminSettings from "@/pages/admin/AdminSettings";
 import Products from "@/pages/admin/Products";
@@ -54,6 +56,9 @@ function AppRoutes() {
         <Route path="orders/new" element={<OrderForm />} />
         <Route path="orders/:id/edit" element={<OrderForm />} />
         <Route path="map" element={<AdminMapPage />} />
+        <Route path="deliverers" element={<Deliverers />} />
+        <Route path="deliverers/new" element={<DelivererForm />} />
+        <Route path="deliverers/:id/edit" element={<DelivererForm />} />
         <Route path="settings" element={<AdminSettings />} />
         <Route path="categories" element={<Categories />} />
         <Route path="products" element={<Products />} />

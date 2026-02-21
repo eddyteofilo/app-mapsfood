@@ -4,6 +4,7 @@ import { Pizza, ShoppingBag, Search, Tag, Star, X, Plus, ChevronRight } from 'lu
 import { Product } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import CartDrawer from '@/components/CartDrawer';
+import ProductVariantModal from '@/components/ProductVariantModal';
 
 export default function Index() {
     const { state, dispatch } = useApp();
@@ -15,6 +16,10 @@ export default function Index() {
     const [showOffer, setShowOffer] = useState(false);
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [featuredProduct, setFeaturedProduct] = useState<Product | null>(null);
+    const [variantSelection, setVariantSelection] = useState<{ isOpen: boolean; product: Product | null }>({
+        isOpen: false,
+        product: null,
+    });
 
     // Seleciona um produto em destaque para o Pop-up
     useEffect(() => {
@@ -45,24 +50,7 @@ export default function Index() {
 
     function addToCart(product: Product) {
         if (product.variants && product.variants.length > 0) {
-            const variantId = prompt(
-                `Escolha uma opção para ${product.name}:\n` +
-                product.variants.map((v, i) => `${i + 1}. ${v.name} ${v.price ? `(+ R$ ${v.price.toFixed(2)})` : ''}`).join('\n')
-            );
-            if (variantId === null) return; // Cancelado
-
-            const idx = parseInt(variantId || '0') - 1;
-            const selectedVariant = product.variants[idx];
-
-            if (selectedVariant) {
-                dispatch({ type: 'ADD_TO_CART', payload: { product, variant: selectedVariant } });
-                toast({
-                    title: 'Item adicionado!',
-                    description: `${product.name} (${selectedVariant.name}) voou para sua sacola. 🍕`,
-                });
-            } else {
-                toast({ title: 'Opção inválida', variant: 'destructive' });
-            }
+            setVariantSelection({ isOpen: true, product });
         } else {
             dispatch({ type: 'ADD_TO_CART', payload: { product } });
             toast({
@@ -73,9 +61,9 @@ export default function Index() {
     }
 
     return (
-        <div className="min-h-screen bg-background pb-24">
+        <div className="min-h-screen bg-background pb-32 safe-bottom">
             {/* Header / Hero */}
-            <header className="relative h-[40vh] md:h-[50vh] overflow-hidden flex items-center justify-center">
+            <header className="relative h-[30vh] md:h-[50vh] overflow-hidden flex items-center justify-center">
                 <div className="absolute inset-0 z-0">
                     <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent z-10" />
                     <img
@@ -90,7 +78,7 @@ export default function Index() {
                         <Star className="w-4 h-4 fill-primary text-primary" />
                         <span className="text-xs font-black uppercase tracking-widest">A melhor da região</span>
                     </div>
-                    <h1 className="font-display text-5xl md:text-7xl font-black text-foreground tracking-tighter italic">
+                    <h1 className="font-display text-4xl md:text-7xl font-black text-foreground tracking-tighter italic px-2">
                         {settings.name || 'PizzaDash'}
                     </h1>
                     <p className="text-muted-foreground text-sm md:text-lg max-w-md mx-auto font-medium">
@@ -125,7 +113,7 @@ export default function Index() {
                     </form>
 
                     {/* Categories Tab */}
-                    <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide no-scrollbar">
+                    <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 no-scrollbar touch-pan-x">
                         <button
                             onClick={() => setActiveCategory('all')}
                             className={`px-6 py-2 rounded-full whitespace-nowrap text-sm font-bold transition-all ${activeCategory === 'all' ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'}`}
@@ -206,20 +194,24 @@ export default function Index() {
 
             {/* Floating Cart Button */}
             {cartCount > 0 && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
+                <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300 w-full px-4 max-w-md">
                     <button
                         onClick={() => setIsCartOpen(true)}
-                        className="flex items-center gap-3 bg-foreground text-background px-8 py-4 rounded-full font-bold shadow-2xl hover:scale-105 active:scale-95 transition-all"
+                        className="w-full flex items-center justify-between bg-foreground text-background px-6 py-4 rounded-2xl font-bold shadow-2xl hover:scale-[1.02] active:scale-95 transition-all outline-none ring-primary/20 focus:ring-4"
                     >
-                        <div className="relative">
-                            <ShoppingBag className="w-5 h-5" />
-                            <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                                {cartCount}
-                            </span>
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <ShoppingBag className="w-5 h-5" />
+                                <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                                    {cartCount}
+                                </span>
+                            </div>
+                            <span>Ver Sacola</span>
                         </div>
-                        <span>Ver Sacola</span>
-                        <div className="h-4 w-[1px] bg-background/20 mx-1" />
-                        <span>R$ {cart.reduce((s, i) => s + (((i.isPromo && i.promoPrice) ? i.promoPrice : i.price) * i.quantity), 0).toFixed(2)}</span>
+                        <div className="flex items-center gap-2">
+                            <div className="h-4 w-[1px] bg-background/20" />
+                            <span>R$ {cart.reduce((s, i) => s + (((i.isPromo && i.promoPrice) ? i.promoPrice : i.price) * i.quantity), 0).toFixed(2)}</span>
+                        </div>
                     </button>
                 </div>
             )}
@@ -274,6 +266,26 @@ export default function Index() {
 
             {/* Cart Drawer */}
             <CartDrawer open={isCartOpen} onClose={() => setIsCartOpen(false)} />
+
+            {/* Variant Selection Modal */}
+            <ProductVariantModal
+                isOpen={variantSelection.isOpen}
+                product={variantSelection.product}
+                onClose={() => setVariantSelection({ isOpen: false, product: null })}
+                onSelect={(variant) => {
+                    if (variantSelection.product) {
+                        dispatch({
+                            type: 'ADD_TO_CART',
+                            payload: { product: variantSelection.product, variant }
+                        });
+                        toast({
+                            title: 'Item adicionado!',
+                            description: `${variantSelection.product.name} (${variant.name}) voou para sua sacola. 🍕`,
+                        });
+                    }
+                    setVariantSelection({ isOpen: false, product: null });
+                }}
+            />
         </div>
     );
 }
