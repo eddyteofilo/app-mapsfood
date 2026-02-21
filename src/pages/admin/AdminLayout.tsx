@@ -142,9 +142,12 @@ export default function AdminLayout() {
           >
             <Menu className="w-6 h-6" />
           </button>
-          <Link to="/admin" className="hidden md:flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors group">
-            <Pizza className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
-            <span>Painel Administrativo</span>
+          <Link to="/admin" className="hidden md:flex items-center gap-2 group">
+            <img
+              src="/logo.png"
+              alt="Logo"
+              className="h-8 w-auto object-contain group-hover:scale-105 transition-transform"
+            />
           </Link>
           <div className="flex items-center gap-3">
             <Link

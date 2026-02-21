@@ -31,9 +31,16 @@ export default function Dashboard() {
   return (
     <div className="p-4 md:p-6 space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Visão geral dos pedidos</p>
+        <div className="flex items-center gap-4">
+          <img
+            src="/logo.png"
+            alt="Logo"
+            className="h-10 w-auto object-contain"
+          />
+          <div>
+            <h1 className="font-display text-2xl font-bold text-foreground">Dashboard</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">Visão geral dos pedidos</p>
+          </div>
         </div>
         <Link
           to="/admin/orders/new"

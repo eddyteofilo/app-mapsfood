@@ -29,30 +29,63 @@ export default function Orders() {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   async function handleStatusChange(order: Order, status: OrderStatus) {
-    dispatch({ type: 'UPDATE_ORDER_STATUS', payload: { id: order.id, status } });
-    const updated = { ...order, status };
+    try {
+      const now = new Date().toISOString();
+      const { error } = await supabase
+        .from('orders')
+        .update({ status, updated_at: now })
+        .eq('id', order.id);
 
-    // Webhook
-    await sendWebhook(updated, `order_${status}`);
+      if (error) throw error;
 
-    // WhatsApp for key status changes
-    if (status === 'received' || status === 'delivering' || status === 'delivered') {
-      const type = status === 'received' ? 'received' : status === 'delivering' ? 'delivering' : 'delivered';
-      const msg = generateWhatsAppMessage(updated, type);
-      const sent = await sendWhatsAppMessage(order.customerPhone, msg);
-      if (sent) {
-        dispatch({ type: 'UPDATE_ORDER', payload: { ...updated, whatsappSent: true } });
-        toast({ title: '✅ WhatsApp enviado', description: `Notificação enviada para ${order.customerName}` });
+      const updated = { ...order, status, updatedAt: now };
+
+      // Webhook
+      await sendWebhook(updated, `order_${status}`);
+
+      // WhatsApp for key status changes
+      if (status === 'received' || status === 'delivering' || status === 'delivered') {
+        const type = status === 'received' ? 'received' : status === 'delivering' ? 'delivering' : 'delivered';
+        const msg = generateWhatsAppMessage(updated, type);
+        const sent = await sendWhatsAppMessage(order.customerPhone, msg);
+        if (sent) {
+          await supabase.from('orders').update({ whatsapp_sent: true }).eq('id', order.id);
+          toast({ title: '✅ WhatsApp enviado', description: `Notificação enviada para ${order.customerName}` });
+        }
       }
-    }
 
-    toast({ title: 'Status atualizado', description: `Pedido #${order.number}: ${STATUS_LABELS[status]}` });
+      toast({ title: 'Status atualizado', description: `Pedido #${order.number}: ${STATUS_LABELS[status]}` });
+    } catch (err: any) {
+      console.error('[Supabase Status Error]', err);
+      toast({ title: 'Erro ao atualizar status', description: err.message, variant: 'destructive' });
+    }
   }
 
-  function handleDelete(order: Order) {
+  async function handleAssignDeliverer(orderId: string, delivererId: string) {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ deliverer_id: delivererId || null, updated_at: new Date().toISOString() })
+        .eq('id', orderId);
+
+      if (error) throw error;
+      toast({ title: delivererId ? 'Entregador atribuído' : 'Entregador removido' });
+    } catch (err: any) {
+      console.error('[Supabase Assign Error]', err);
+      toast({ title: 'Erro ao atribuir entregador', description: err.message, variant: 'destructive' });
+    }
+  }
+
+  async function handleDelete(order: Order) {
     if (confirm(`Excluir pedido #${order.number}?`)) {
-      dispatch({ type: 'DELETE_ORDER', payload: order.id });
-      toast({ title: 'Pedido excluído' });
+      try {
+        const { error } = await supabase.from('orders').delete().eq('id', order.id);
+        if (error) throw error;
+        toast({ title: 'Pedido excluído' });
+      } catch (err: any) {
+        console.error('[Supabase Delete Error]', err);
+        toast({ title: 'Erro ao excluir pedido', description: err.message, variant: 'destructive' });
+      }
     }
   }
 
@@ -177,7 +210,7 @@ export default function Orders() {
                       <div className="flex gap-2 flex-wrap">
                         <select
                           value={order.delivererId || ''}
-                          onChange={e => dispatch({ type: 'ASSIGN_DELIVERER', payload: { orderId: order.id, delivererId: e.target.value } })}
+                          onChange={e => handleAssignDeliverer(order.id, e.target.value)}
                           className="bg-muted border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                         >
                           <option value="">Sem entregador</option>

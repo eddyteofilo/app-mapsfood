@@ -74,6 +74,47 @@ export default function TrackingPage() {
   const settings = state.settings;
   const deliverer = order ? state.deliverers.find(d => d.id === order.delivererId) : null;
 
+  const [routePoints, setRoutePoints] = useState<[number, number][]>([]);
+  const [distance, setDistance] = useState<string>('');
+  const [duration, setDuration] = useState<string>('');
+
+  // Sincronizar rota em tempo real
+  useEffect(() => {
+    if (order?.status === 'delivering' && deliverer?.currentLocation && order.deliveryCoords && settings.googleMapsApiKey) {
+      const fetchRoute = async () => {
+        try {
+          const origin = `${deliverer.currentLocation[0]},${deliverer.currentLocation[1]}`;
+          const destination = `${order.deliveryCoords[0]},${order.deliveryCoords[1]}`;
+          const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&key=${settings.googleMapsApiKey}`;
+
+          const resp = await fetch(url);
+          const data = await resp.json();
+
+          if (data.status === 'OK' && data.routes.length > 0) {
+            const route = data.routes[0];
+            const leg = route.legs[0];
+
+            setDistance(leg.distance.text);
+            setDuration(leg.duration.text);
+
+            // Decodifica a polyline (simplificado: pegando os pontos principais dos passos)
+            const points: [number, number][] = [];
+            route.legs[0].steps.forEach((step: any) => {
+              points.push([step.end_location.lat, step.end_location.lng]);
+            });
+            setRoutePoints(points);
+          }
+        } catch (error) {
+          console.error('[Directions Error]', error);
+        }
+      };
+
+      fetchRoute();
+      const interval = setInterval(fetchRoute, 15000); // Atualiza a cada 15s
+      return () => clearInterval(interval);
+    }
+  }, [order?.status, deliverer?.currentLocation, order?.deliveryCoords, settings.googleMapsApiKey]);
+
   if (!order) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -92,12 +133,13 @@ export default function TrackingPage() {
   return (
     <div className="min-h-screen bg-background animate-fade-in">
       {/* Header */}
-      <div className="gradient-hero px-4 pt-8 pb-6 text-center">
-        <div className="inline-flex items-center justify-center w-14 h-14 bg-white/20 rounded-2xl mb-3">
-          <Pizza className="w-8 h-8 text-white" />
-        </div>
-        <p className="text-white/80 text-sm font-medium">{settings.name}</p>
-        <h1 className="font-display text-3xl font-bold text-white mt-1">Pedido #{order.number}</h1>
+      <div className="gradient-hero px-4 pt-10 pb-8 text-center flex flex-col items-center">
+        <img
+          src="/logo.png"
+          alt={settings.name || 'EmRota'}
+          className="h-12 w-auto object-contain mb-4 drop-shadow-md"
+        />
+        <h1 className="font-display text-2xl font-bold text-white">Pedido #{order.number}</h1>
       </div>
 
       <div className="max-w-lg mx-auto px-4 -mt-3 pb-8 space-y-4">
@@ -127,7 +169,12 @@ export default function TrackingPage() {
             }`}>
             {order.status === 'received' && '✅ Recebemos seu pedido! Já vamos começar a preparar.'}
             {order.status === 'preparing' && '👨‍🍳 Sua pizza está sendo preparada com carinho!'}
-            {order.status === 'delivering' && '🛵 Seu pedido saiu! Chegando em breve!'}
+            {order.status === 'delivering' && (
+              <div className="space-y-1">
+                <p>🛵 Seu pedido saiu! Chegando em breve!</p>
+                {duration && <p className="text-xs opacity-80">Previsão: Chega em {duration} ({distance})</p>}
+              </div>
+            )}
             {order.status === 'delivered' && '🎊 Entregue! Bom apetite!'}
           </div>
         </div>
@@ -149,8 +196,15 @@ export default function TrackingPage() {
                     <Marker position={order.deliveryCoords} icon={deliveryIcon}>
                       <Popup>📍 Seu endereço</Popup>
                     </Marker>
-                    <Polyline positions={[settings.coords, order.deliveryCoords]} color="#E53E3E" weight={3} dashArray="8,4" opacity={0.7} />
+                    {/* Se não houver rota do Google, mostra a linha reta tracejada */}
+                    {routePoints.length === 0 && (
+                      <Polyline positions={[settings.coords, order.deliveryCoords]} color="#E53E3E" weight={3} dashArray="8,4" opacity={0.7} />
+                    )}
                   </>
+                )}
+                {/* Rota real do Google Maps */}
+                {routePoints.length > 0 && deliverer?.currentLocation && (
+                  <Polyline positions={[deliverer.currentLocation, ...routePoints]} color="#3B82F6" weight={5} opacity={0.8} />
                 )}
                 {deliverer?.currentLocation && (
                   <Marker position={deliverer.currentLocation} icon={delivererIcon}>

@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useApp } from '@/hooks/use-app';
 import { useNavigate } from 'react-router-dom';
 import { Order } from '@/types';
+import { supabase } from '@/lib/supabase';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import * as L from 'leaflet';
 import {
@@ -49,16 +50,20 @@ export default function DeliveryMode() {
 
   useEffect(() => {
     if (!navigator.geolocation) return;
-    watchRef.current = navigator.geolocation.watchPosition(
-      pos => {
+    watchRef.current = window.navigator.geolocation.watchPosition(
+      async pos => {
         const loc: [number, number] = [pos.coords.latitude, pos.coords.longitude];
         setMyLocation(loc);
         if (delivererId) {
-          dispatch({ type: 'UPDATE_DELIVERER_LOCATION', payload: { id: delivererId, location: loc } });
+          // Atualiza no Supabase em tempo real
+          await supabase
+            .from('deliverers')
+            .update({ current_location: loc })
+            .eq('id', delivererId);
         }
       },
       () => {
-        // Simulate location near pizzaria if GPS denied
+        // Fallback simulação (apenas se GPS falhar)
         const base = state.settings.coords;
         const sim: [number, number] = [base[0] + (Math.random() - 0.5) * 0.01, base[1] + (Math.random() - 0.5) * 0.01];
         setMyLocation(sim);
@@ -68,16 +73,34 @@ export default function DeliveryMode() {
     return () => {
       if (watchRef.current !== null) navigator.geolocation.clearWatch(watchRef.current);
     };
-  }, [delivererId]);
+  }, [delivererId, state.settings.coords]);
 
-  function startDelivery(order: Order) {
-    dispatch({ type: 'UPDATE_ORDER_STATUS', payload: { id: order.id, status: 'delivering' } });
-    setActiveOrderId(order.id);
+  async function startDelivery(order: Order) {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'delivering', updated_at: new Date().toISOString() })
+        .eq('id', order.id);
+
+      if (error) throw error;
+      setActiveOrderId(order.id);
+    } catch (err) {
+      console.error('[StartDelivery Error]', err);
+    }
   }
 
-  function finishDelivery(order: Order) {
-    dispatch({ type: 'UPDATE_ORDER_STATUS', payload: { id: order.id, status: 'delivered' } });
-    setActiveOrderId(null);
+  async function finishDelivery(order: Order) {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'delivered', updated_at: new Date().toISOString() })
+        .eq('id', order.id);
+
+      if (error) throw error;
+      setActiveOrderId(null);
+    } catch (err) {
+      console.error('[FinishDelivery Error]', err);
+    }
   }
 
   function logout() {

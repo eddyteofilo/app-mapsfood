@@ -82,7 +82,9 @@ type Action =
   | { type: 'UPDATE_CART_QUANTITY'; payload: { id: string; variantId?: string; quantity: number } }
   | { type: 'CLEAR_CART' }
   | { type: 'SET_PRODUCTS'; payload: Product[] }
-  | { type: 'SET_CATEGORIES'; payload: AppState['categories'] };
+  | { type: 'SET_CATEGORIES'; payload: AppState['categories'] }
+  | { type: 'SET_ORDERS'; payload: Order[] }
+  | { type: 'SET_DELIVERERS'; payload: Deliverer[] };
 
 
 // ─── Reducer ─────────────────────────────────────────────────
@@ -238,6 +240,12 @@ function reducer(state: AppState, action: Action): AppState {
       saveToStorage(STORAGE_KEYS.categories, action.payload);
       return { ...state, categories: action.payload };
     }
+    case 'SET_ORDERS': {
+      return { ...state, orders: action.payload };
+    }
+    case 'SET_DELIVERERS': {
+      return { ...state, deliverers: action.payload };
+    }
     default:
       return state;
   }
@@ -328,11 +336,115 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           }));
           dispatch({ type: 'SET_PRODUCTS', payload: normalizedProducts });
         }
+
+        // Carregar Pedidos
+        const { data: orderData, error: orderError } = await supabase
+          .from('orders')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!orderError && orderData) {
+          const normalizedOrders: Order[] = orderData.map(o => ({
+            id: o.id,
+            number: o.number,
+            customerName: o.customer_name,
+            customerPhone: o.customer_phone,
+            deliveryAddress: o.delivery_address,
+            deliveryCoords: o.delivery_coords ? [o.delivery_coords[0], o.delivery_coords[1]] as [number, number] : undefined,
+            items: o.items,
+            total: Number(o.total),
+            paymentMethod: o.payment_method,
+            status: o.status,
+            delivererId: o.deliverer_id,
+            notes: o.notes,
+            whatsappSent: o.whatsapp_sent,
+            createdAt: o.created_at,
+            updatedAt: o.updated_at
+          }));
+          dispatch({ type: 'SET_ORDERS', payload: normalizedOrders });
+        }
+
+        // Carregar Entregadores
+        const { data: delData, error: delError } = await supabase
+          .from('deliverers')
+          .select('*');
+
+        if (!delError && delData) {
+          const normalizedDeliverers: Deliverer[] = delData.map(d => ({
+            id: d.id,
+            name: d.name,
+            phone: d.phone,
+            email: d.email,
+            document: d.document,
+            vehicle: d.vehicle,
+            vehiclePlate: d.vehicle_plate,
+            available: d.available,
+            currentLocation: d.current_location ? [d.current_location[0], d.current_location[1]] as [number, number] : undefined
+          }));
+          dispatch({ type: 'SET_DELIVERERS', payload: normalizedDeliverers });
+        }
       } catch (error) {
         console.error('Erro ao carregar dados do Supabase:', error);
       }
     }
     loadInitialData();
+
+    // ─── Realtime Subscriptions ──────────────────────────────
+    const ordersSub = supabase
+      .channel('orders-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
+        // Recarregar tudo ou tratar individualmente (simplificado: recarregar pedidos)
+        supabase.from('orders').select('*').order('created_at', { ascending: false }).then(({ data }) => {
+          if (data) {
+            const normalized = data.map(o => ({
+              id: o.id,
+              number: o.number,
+              customerName: o.customer_name,
+              customerPhone: o.customer_phone,
+              deliveryAddress: o.delivery_address,
+              deliveryCoords: o.delivery_coords ? [o.delivery_coords[0], o.delivery_coords[1]] as [number, number] : undefined,
+              items: o.items,
+              total: Number(o.total),
+              paymentMethod: o.payment_method,
+              status: o.status,
+              delivererId: o.deliverer_id,
+              notes: o.notes,
+              whatsappSent: o.whatsapp_sent,
+              createdAt: o.created_at,
+              updatedAt: o.updated_at
+            }));
+            dispatch({ type: 'SET_ORDERS', payload: normalized });
+          }
+        });
+      })
+      .subscribe();
+
+    const deliverersSub = supabase
+      .channel('deliverers-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'deliverers' }, (payload) => {
+        supabase.from('deliverers').select('*').then(({ data }) => {
+          if (data) {
+            const normalized = data.map(d => ({
+              id: d.id,
+              name: d.name,
+              phone: d.phone,
+              email: d.email,
+              document: d.document,
+              vehicle: d.vehicle,
+              vehiclePlate: d.vehicle_plate,
+              available: d.available,
+              currentLocation: d.current_location ? [d.current_location[0], d.current_location[1]] as [number, number] : undefined
+            }));
+            dispatch({ type: 'SET_DELIVERERS', payload: normalized });
+          }
+        });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ordersSub);
+      supabase.removeChannel(deliverersSub);
+    };
   }, [dispatch]);
 
 

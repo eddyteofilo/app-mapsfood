@@ -2,13 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/hooks/use-app';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 import { Pizza, Eye, EyeOff, Bike, Lock, User } from 'lucide-react';
-
-const MOCK_USERS = [
-  { username: 'admin', password: 'pizza123', role: 'admin' as const },
-  { username: 'entregador1', password: 'moto123', role: 'deliverer' as const, delivererId: 'd1' },
-  { username: 'entregador2', password: 'moto123', role: 'deliverer' as const, delivererId: 'd2' },
-];
 
 export default function LoginPage() {
   const { dispatch } = useApp();
@@ -22,17 +17,41 @@ export default function LoginPage() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    await new Promise(r => setTimeout(r, 600));
 
-    const user = MOCK_USERS.find(u => u.username === username && u.password === password);
-    if (!user) {
-      toast({ title: 'Credenciais inválidas', description: 'Verifique usuário e senha.', variant: 'destructive' });
+    try {
+      const { data, error } = await supabase
+        .from('app_users')
+        .select('*')
+        .eq('username', username)
+        .eq('password', password) // Simplificado por enquanto, em produção use hash
+        .single();
+
+      if (error || !data) {
+        toast({
+          title: 'Credenciais inválidas',
+          description: 'Verifique usuário e senha.',
+          variant: 'destructive'
+        });
+        setLoading(false);
+        return;
+      }
+
+      dispatch({
+        type: 'SET_USER',
+        payload: {
+          role: data.role as 'admin' | 'deliverer',
+          delivererId: data.deliverer_id
+        }
+      });
+
+      toast({ title: `Bem-vindo, ${username}! 👋` });
+      navigate(data.role === 'admin' ? '/admin' : '/delivery');
+    } catch (err: any) {
+      console.error('[Login Error]', err);
+      toast({ title: 'Erro ao entrar', description: 'Ocorreu um problema na conexão.', variant: 'destructive' });
+    } finally {
       setLoading(false);
-      return;
     }
-
-    dispatch({ type: 'SET_USER', payload: { role: user.role, delivererId: user.delivererId } });
-    navigate(user.role === 'admin' ? '/admin' : '/delivery');
   }
 
   return (

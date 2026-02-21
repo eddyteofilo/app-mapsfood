@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '@/hooks/use-app';
 import { Deliverer } from '@/types';
-import { ArrowLeft, User, Phone, Mail, FileText, Bike, Hash, Palette, Save, Loader2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { ArrowLeft, User, Phone, Mail, FileText, Bike, Hash, Palette, Save, Loader2, Lock, Key } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function DelivererForm() {
@@ -14,7 +15,7 @@ export default function DelivererForm() {
 
     const existing = id ? state.deliverers.find(d => d.id === id) : null;
 
-    const [form, setForm] = useState<Omit<Deliverer, 'id' | 'currentLocation'>>({
+    const [form, setForm] = useState<Omit<Deliverer, 'id' | 'currentLocation'> & { username?: string; password?: string }>({
         name: '',
         phone: '',
         email: '',
@@ -24,6 +25,8 @@ export default function DelivererForm() {
         vehiclePlate: '',
         vehicleColor: '',
         available: true,
+        username: '',
+        password: '',
     });
 
     useEffect(() => {
@@ -50,23 +53,72 @@ export default function DelivererForm() {
             return;
         }
 
-        if (isEdit && existing) {
-            const updated: Deliverer = {
-                ...existing,
-                ...form,
-            };
-            dispatch({ type: 'UPDATE_DELIVERER', payload: updated });
-            toast({ title: 'Entregador atualizado!' });
-        } else {
-            const deliverer: Deliverer = {
-                id: Math.random().toString(36).substring(2, 15),
-                ...form,
-            };
-            dispatch({ type: 'ADD_DELIVERER', payload: deliverer });
-            toast({ title: 'Entregador cadastrado com sucesso!' });
-        }
+        try {
+            if (isEdit && existing) {
+                const { error } = await supabase
+                    .from('deliverers')
+                    .update({
+                        name: form.name,
+                        phone: form.phone,
+                        email: form.email,
+                        document: form.document,
+                        vehicle: form.vehicle,
+                        vehicle_plate: form.vehiclePlate,
+                        available: form.available
+                    })
+                    .eq('id', existing.id);
 
-        navigate('/admin/deliverers');
+                if (error) throw error;
+                toast({ title: 'Entregador atualizado!' });
+            } else {
+                if (!form.username || !form.password) {
+                    toast({ title: 'Preencha usuário e senha para o login', variant: 'destructive' });
+                    return;
+                }
+
+                // 1. Criar o entregador
+                const { data: newDel, error: delError } = await supabase
+                    .from('deliverers')
+                    .insert([{
+                        name: form.name,
+                        phone: form.phone,
+                        email: form.email,
+                        document: form.document,
+                        vehicle: form.vehicle,
+                        vehicle_plate: form.vehiclePlate,
+                        available: form.available
+                    }])
+                    .select()
+                    .single();
+
+                if (delError) throw delError;
+
+                // 2. Criar o usuário de acesso
+                if (newDel) {
+                    const { error: userError } = await supabase
+                        .from('app_users')
+                        .insert([{
+                            username: form.username,
+                            password: form.password,
+                            role: 'deliverer',
+                            deliverer_id: newDel.id
+                        }]);
+
+                    if (userError) {
+                        // Opcional: deletar o entregador se falhar o usuário? 
+                        // Melhor avisar.
+                        console.error('[User Creation Error]', userError);
+                        toast({ title: 'Entregador criado, mas erro ao criar login', description: userError.message, variant: 'destructive' });
+                    } else {
+                        toast({ title: 'Entregador e Login criados com sucesso!' });
+                    }
+                }
+            }
+            navigate('/admin/deliverers');
+        } catch (err: any) {
+            console.error('[Deliverer Save Error]', err);
+            toast({ title: 'Erro ao salvar', description: err.message, variant: 'destructive' });
+        }
     }
 
     return (
@@ -218,6 +270,50 @@ export default function DelivererForm() {
                         </div>
                     </div>
                 </div>
+
+                {/* Dados de Acesso (Login) - Apenas na Criação */}
+                {!isEdit && (
+                    <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-4">
+                        <div className="flex items-center gap-2 pb-2 border-b border-border">
+                            <Lock className="w-5 h-5 text-primary" />
+                            <h2 className="font-display font-bold text-lg">Dados de Acesso</h2>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-medium">Usuário de Login *</label>
+                                <div className="relative">
+                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                    <input
+                                        required
+                                        value={form.username}
+                                        onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
+                                        placeholder="Ex: joao_mot boy"
+                                        className="w-full bg-muted/50 border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-medium">Senha *</label>
+                                <div className="relative">
+                                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                    <input
+                                        required
+                                        type="password"
+                                        value={form.password}
+                                        onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                                        placeholder="••••••••"
+                                        className="w-full bg-muted/50 border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground italic">
+                            * Esses dados serão usados pelo entregador para entrar no sistema. Clique em Salvar para criar o acesso.
+                        </p>
+                    </div>
+                )}
 
                 {/* Status */}
                 <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-4">

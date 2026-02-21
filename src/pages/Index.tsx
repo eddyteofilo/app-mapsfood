@@ -78,9 +78,16 @@ export default function Index() {
                         <Star className="w-4 h-4 fill-primary text-primary" />
                         <span className="text-xs font-black uppercase tracking-widest">A melhor da região</span>
                     </div>
-                    <h1 className="font-display text-4xl md:text-7xl font-black text-foreground tracking-tighter italic px-2">
-                        {settings.name || 'PizzaDash'}
-                    </h1>
+                    <div className="flex flex-col items-center gap-4">
+                        <img
+                            src="/logo.png"
+                            alt={settings.name || 'EmRota'}
+                            className="h-16 md:h-24 w-auto object-contain drop-shadow-lg"
+                        />
+                        <h1 className="sr-only">
+                            {settings.name || 'EmRota'}
+                        </h1>
+                    </div>
                     <p className="text-muted-foreground text-sm md:text-lg max-w-md mx-auto font-medium">
                         Ingredientes selecionados e massa artesanal. Peça agora pelo WhatsApp!
                     </p>

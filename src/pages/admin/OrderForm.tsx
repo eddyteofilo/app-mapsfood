@@ -175,32 +175,54 @@ export default function OrderForm() {
 
     const now = new Date().toISOString();
 
-    if (isEdit && existing) {
-      const updated: Order = {
-        ...existing,
-        ...form,
-        items,
-        total,
-        updatedAt: now,
-      };
-      dispatch({ type: 'UPDATE_ORDER', payload: updated });
-      toast({ title: 'Pedido atualizado!' });
-    } else {
-      const order: Order = {
-        id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15),
-        number: nextOrderNumber(),
-        ...form,
-        items,
-        total,
-        status: 'received',
-        createdAt: now,
-        updatedAt: now,
-      };
-      dispatch({ type: 'ADD_ORDER', payload: order });
-      await sendWebhook(order, 'order_created');
-      toast({ title: `✅ Pedido #${order.number} criado!`, description: `${form.customerName} — R$ ${total.toFixed(2)}` });
+    const orderData = {
+      customer_name: form.customerName,
+      customer_phone: form.customerPhone,
+      delivery_address: form.deliveryAddress,
+      delivery_coords: form.deliveryCoords,
+      items,
+      total,
+      payment_method: form.paymentMethod,
+      deliverer_id: form.delivererId || null,
+      notes: form.notes,
+      updated_at: now,
+    };
+
+    try {
+      if (isEdit && existing) {
+        const { error } = await supabase
+          .from('orders')
+          .update(orderData)
+          .eq('id', existing.id);
+
+        if (error) throw error;
+        toast({ title: 'Pedido atualizado!' });
+      } else {
+        const { data, error } = await supabase
+          .from('orders')
+          .insert([{
+            ...orderData,
+            status: 'received',
+            created_at: now,
+          }])
+          .select()
+          .single();
+
+        if (error) throw error;
+        if (data) {
+          await sendWebhook(data as any, 'order_created');
+          toast({ title: `✅ Pedido #${data.number} criado!`, description: `${form.customerName} — R$ ${total.toFixed(2)}` });
+        }
+      }
+      navigate('/admin/orders');
+    } catch (err: any) {
+      console.error('[Supabase Save Error]', err);
+      toast({
+        title: 'Erro ao salvar pedido',
+        description: err.message,
+        variant: 'destructive'
+      });
     }
-    navigate('/admin/orders');
   }
 
   if (!state || !state.settings) {
