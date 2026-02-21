@@ -1,0 +1,197 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   PIZZA TRACK — Design System
+   All colors in HSL. Tokens defined here, used everywhere.
+   ============================================================ */
+
+@layer base {
+  :root {
+    /* Base */
+    --background: 0 0% 6%;
+    --foreground: 0 0% 95%;
+
+    /* Cards / Surfaces */
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 95%;
+    --card-elevated: 0 0% 13%;
+
+    /* Popover */
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 95%;
+
+    /* Brand — Vermelho fogo */
+    --primary: 5 87% 53%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 15 90% 60%;
+    --primary-muted: 5 70% 25%;
+
+    /* Accent — Laranja pizza */
+    --secondary: 24 95% 55%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Muted */
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 55%;
+
+    /* Accent surface */
+    --accent: 0 0% 16%;
+    --accent-foreground: 0 0% 95%;
+
+    /* Destructive */
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Status colors */
+    --status-received: 220 90% 60%;
+    --status-preparing: 38 95% 55%;
+    --status-delivering: 24 95% 55%;
+    --status-delivered: 142 70% 45%;
+
+    /* Borders & Inputs */
+    --border: 0 0% 18%;
+    --input: 0 0% 14%;
+    --ring: 5 87% 53%;
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 8%;
+    --sidebar-foreground: 0 0% 80%;
+    --sidebar-primary: 5 87% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 0 0% 14%;
+    --sidebar-ring: 5 87% 53%;
+
+    /* Radius */
+    --radius: 0.75rem;
+
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(5 87% 40%) 0%, hsl(24 95% 45%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 12%) 0%, hsl(0 0% 9%) 100%);
+    --gradient-glow: radial-gradient(ellipse at center, hsl(5 87% 53% / 0.15) 0%, transparent 70%);
+
+    /* Shadows */
+    --shadow-sm: 0 2px 8px hsl(0 0% 0% / 0.4);
+    --shadow-md: 0 4px 20px hsl(0 0% 0% / 0.5);
+    --shadow-glow: 0 0 30px hsl(5 87% 53% / 0.25);
+    --shadow-orange: 0 0 20px hsl(24 95% 55% / 0.3);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5 {
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  }
+
+  /* Scrollbar custom */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 2px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary));
+  }
+}
+
+@layer utilities {
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+  .gradient-card {
+    background: var(--gradient-card);
+  }
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+  .shadow-orange {
+    box-shadow: var(--shadow-orange);
+  }
+  .text-gradient {
+    background: var(--gradient-hero);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .status-received {
+    background: hsl(var(--status-received) / 0.15);
+    color: hsl(var(--status-received));
+    border: 1px solid hsl(var(--status-received) / 0.3);
+  }
+  .status-preparing {
+    background: hsl(var(--status-preparing) / 0.15);
+    color: hsl(var(--status-preparing));
+    border: 1px solid hsl(var(--status-preparing) / 0.3);
+  }
+  .status-delivering {
+    background: hsl(var(--status-delivering) / 0.15);
+    color: hsl(var(--status-delivering));
+    border: 1px solid hsl(var(--status-delivering) / 0.3);
+  }
+  .status-delivered {
+    background: hsl(var(--status-delivered) / 0.15);
+    color: hsl(var(--status-delivered));
+    border: 1px solid hsl(var(--status-delivered) / 0.3);
+  }
+  .card-elevated {
+    background: hsl(var(--card-elevated));
+  }
+  .glass {
+    background: hsl(0 0% 100% / 0.05);
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(0 0% 100% / 0.08);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 16px);
+  }
+}
+
+/* Leaflet overrides */
+.leaflet-container {
+  background: hsl(var(--card)) !important;
+  font-family: 'Inter', sans-serif !important;
+}
+.leaflet-popup-content-wrapper {
+  background: hsl(var(--card)) !important;
+  color: hsl(var(--foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+.leaflet-popup-tip {
+  background: hsl(var(--card)) !important;
+}
+.leaflet-control-zoom a {
+  background: hsl(var(--card)) !important;
+  color: hsl(var(--foreground)) !important;
+  border-color: hsl(var(--border)) !important;
+}
+.leaflet-tile {
+  filter: brightness(0.85) saturate(0.8);
+}
