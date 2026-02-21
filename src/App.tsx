@@ -76,7 +76,6 @@ function AppRoutes() {
     </Routes>
   );
 }
-
 function GlobalErrorHandler() {
   const { toast } = useToast();
   useEffect(() => {
@@ -94,6 +93,54 @@ function GlobalErrorHandler() {
   return null;
 }
 
+function MetadataManager() {
+  const { state } = useApp();
+  const settings = state.settings;
+
+  useEffect(() => {
+    // Título
+    document.title = settings.name || 'PizzaTrack';
+
+    // Favicon
+    if (settings.faviconUrl) {
+      let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.getElementsByTagName('head')[0].appendChild(link);
+      }
+      link.href = settings.faviconUrl;
+    }
+
+    // OG Image (Social)
+    if (settings.ogImageUrl) {
+      const tags = [
+        { property: 'og:image', content: settings.ogImageUrl },
+        { property: 'twitter:image', content: settings.ogImageUrl },
+        { property: 'og:title', content: settings.name },
+        { property: 'og:description', content: 'Peça sua pizza favorita agora!' }
+      ];
+
+      tags.forEach(tag => {
+        let meta = document.querySelector(`meta[property='${tag.property}']`) ||
+          document.querySelector(`meta[name='${tag.property}']`);
+        if (!meta) {
+          meta = document.createElement('meta');
+          if (tag.property.startsWith('og:')) {
+            meta.setAttribute('property', tag.property);
+          } else {
+            meta.setAttribute('name', tag.property);
+          }
+          document.getElementsByTagName('head')[0].appendChild(meta);
+        }
+        meta.setAttribute('content', tag.content);
+      });
+    }
+  }, [settings]);
+
+  return null;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AppProvider>
@@ -102,6 +149,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <GlobalErrorHandler />
+          <MetadataManager />
           <div className="flex flex-col min-h-screen">
             <div className="flex-1">
               <AppRoutes />

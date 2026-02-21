@@ -3,8 +3,10 @@ import { useApp } from '@/hooks/use-app';
 import { useToast } from '@/hooks/use-toast';
 import {
   Settings, Webhook, MessageCircle, Clock, MapPin, Save,
-  ChevronDown, ChevronUp, ExternalLink, Eye, EyeOff, Package, Trash2
+  ChevronDown, ChevronUp, ExternalLink, Eye, EyeOff, Package, Trash2,
+  Upload, ImageIcon, Share2, MousePointer2, Smartphone
 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 function Section({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
   const [open, setOpen] = useState(true);
@@ -78,6 +80,40 @@ export default function AdminSettings() {
       toast({ title: 'Erro ao enviar webhook', variant: 'destructive' });
     } finally {
       setTestingWebhook(false);
+    }
+  }
+
+  async function handleFileUpload(file: File, field: keyof typeof settings) {
+    if (!file) return;
+
+    // Validar tamanho (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: 'Arquivo muito grande', description: 'O limite é 2MB.', variant: 'destructive' });
+      return;
+    }
+
+    const toastId = toast({ title: 'Enviando imagem...', description: 'Aguarde um momento.' });
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${String(field)}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('branding')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('branding')
+        .getPublicUrl(filePath);
+
+      update(String(field), data.publicUrl);
+      toast({ title: '✅ Upload concluído!' });
+    } catch (err: any) {
+      console.error('[Upload Error]', err);
+      toast({ title: 'Erro ao enviar imagem', description: 'Verifique se o balde "branding" existe no seu Supabase Storage.', variant: 'destructive' });
     }
   }
 
@@ -330,6 +366,124 @@ export default function AdminSettings() {
             </button>
           </div>
         </Field>
+      </Section>
+
+      {/* Identidade Visual */}
+      <Section title="Identidade Visual" icon={ImageIcon}>
+        <div className="p-3 bg-purple-500/5 border border-purple-500/20 rounded-xl text-xs text-muted-foreground space-y-2">
+          <p className="font-semibold text-foreground">Customização da Marca</p>
+          <p>Altere as imagens que o seu cliente vê ao acessar o site, compartilhar no WhatsApp ou instalar o app.</p>
+        </div>
+
+        <div className="space-y-6">
+          {/* Logo */}
+          <div className="flex flex-col sm:flex-row gap-4 items-start border-b border-border pb-6">
+            <div className="flex-1 space-y-1">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-primary" /> Logo Principal
+              </label>
+              <p className="text-[10px] text-muted-foreground">Recomendado: 400x120px (Fundo transparente .png)</p>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'logoUrl')}
+                className="hidden" id="logo-up"
+              />
+              <label htmlFor="logo-up" className="mt-2 inline-flex items-center gap-2 text-xs bg-muted hover:bg-accent px-3 py-1.5 rounded-lg cursor-pointer transition-colors">
+                <Upload className="w-3 h-3" /> Escolher Logo
+              </label>
+            </div>
+            {settings.logoUrl && (
+              <div className="w-32 h-16 bg-muted rounded-xl border border-border flex items-center justify-center p-2 relative group">
+                <img src={settings.logoUrl} alt="Logo Prev" className="max-w-full max-h-full object-contain" />
+                <button onClick={() => update('logoUrl', '')} className="absolute -top-2 -right-2 bg-destructive text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Favicon */}
+          <div className="flex flex-col sm:flex-row gap-4 items-start border-b border-border pb-6">
+            <div className="flex-1 space-y-1">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <MousePointer2 className="w-4 h-4 text-primary" /> Favicon (Ícone da Aba)
+              </label>
+              <p className="text-[10px] text-muted-foreground">Recomendado: 32x32px ou 512x512px (.png)</p>
+              <input
+                type="file"
+                accept="image/png"
+                onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'faviconUrl')}
+                className="hidden" id="fav-up"
+              />
+              <label htmlFor="fav-up" className="mt-2 inline-flex items-center gap-2 text-xs bg-muted hover:bg-accent px-3 py-1.5 rounded-lg cursor-pointer transition-colors">
+                <Upload className="w-3 h-3" /> Escolher Favicon
+              </label>
+            </div>
+            {settings.faviconUrl && (
+              <div className="w-12 h-12 bg-muted rounded-xl border border-border flex items-center justify-center p-2 relative group">
+                <img src={settings.faviconUrl} alt="Fav Prev" className="w-6 h-6 object-contain" />
+                <button onClick={() => update('faviconUrl', '')} className="absolute -top-2 -right-2 bg-destructive text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Social Image */}
+          <div className="flex flex-col sm:flex-row gap-4 items-start border-b border-border pb-6">
+            <div className="flex-1 space-y-1">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Share2 className="w-4 h-4 text-primary" /> Imagem Social (Meta Tag OG)
+              </label>
+              <p className="text-[10px] text-muted-foreground">Recomendado: 1200x630px. Aparece ao enviar link no WhatsApp.</p>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'ogImageUrl')}
+                className="hidden" id="og-up"
+              />
+              <label htmlFor="og-up" className="mt-2 inline-flex items-center gap-2 text-xs bg-muted hover:bg-accent px-3 py-1.5 rounded-lg cursor-pointer transition-colors">
+                <Upload className="w-3 h-3" /> Escolher Imagem
+              </label>
+            </div>
+            {settings.ogImageUrl && (
+              <div className="w-32 h-16 bg-muted rounded-xl border border-border flex items-center justify-center p-2 relative group">
+                <img src={settings.ogImageUrl} alt="OG Prev" className="max-w-full max-h-full object-contain" />
+                <button onClick={() => update('ogImageUrl', '')} className="absolute -top-2 -right-2 bg-destructive text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* PWA Icon */}
+          <div className="flex flex-col sm:flex-row gap-4 items-start">
+            <div className="flex-1 space-y-1">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Smartphone className="w-4 h-4 text-primary" /> Ícones do Aplicativo (PWA)
+              </label>
+              <p className="text-[10px] text-muted-foreground">Recomendado: 512x512px. Usado ao "Instalar App".</p>
+              <input
+                type="file"
+                accept="image/png"
+                onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'pwaIconUrl')}
+                className="hidden" id="pwa-up"
+              />
+              <label htmlFor="pwa-up" className="mt-2 inline-flex items-center gap-2 text-xs bg-muted hover:bg-accent px-3 py-1.5 rounded-lg cursor-pointer transition-colors">
+                <Upload className="w-3 h-3" /> Escolher Ícone
+              </label>
+            </div>
+            {settings.pwaIconUrl && (
+              <div className="w-16 h-16 bg-muted rounded-2xl border border-border flex items-center justify-center p-2 relative group">
+                <img src={settings.pwaIconUrl} alt="PWA Prev" className="w-full h-full object-contain rounded-lg" />
+                <button onClick={() => update('pwaIconUrl', '')} className="absolute -top-2 -right-2 bg-destructive text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </Section>
 
       <button

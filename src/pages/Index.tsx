@@ -79,11 +79,17 @@ export default function Index() {
                         <span className="text-xs font-black uppercase tracking-widest">A melhor da região</span>
                     </div>
                     <div className="flex flex-col items-center gap-4">
-                        <img
-                            src="/logo.png"
-                            alt={settings.name || 'EmRota'}
-                            className="h-16 md:h-24 w-auto object-contain drop-shadow-lg"
-                        />
+                        {settings.logoUrl ? (
+                            <img
+                                src={settings.logoUrl}
+                                alt={settings.name}
+                                className="h-20 md:h-32 w-auto object-contain drop-shadow-lg animate-fade-in"
+                            />
+                        ) : (
+                            <div className="w-20 h-20 rounded-3xl gradient-hero flex items-center justify-center shadow-glow animate-pulse-glow">
+                                <Pizza className="w-10 h-10 text-white" />
+                            </div>
+                        )}
                         <h1 className="sr-only">
                             {settings.name || 'EmRota'}
                         </h1>

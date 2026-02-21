@@ -63,7 +63,9 @@ export default function DelivererForm() {
                         email: form.email,
                         document: form.document,
                         vehicle: form.vehicle,
+                        vehicle_model: form.vehicleModel,
                         vehicle_plate: form.vehiclePlate,
+                        vehicle_color: form.vehicleColor,
                         available: form.available
                     })
                     .eq('id', existing.id);
@@ -85,7 +87,9 @@ export default function DelivererForm() {
                         email: form.email,
                         document: form.document,
                         vehicle: form.vehicle,
+                        vehicle_model: form.vehicleModel,
                         vehicle_plate: form.vehiclePlate,
+                        vehicle_color: form.vehicleColor,
                         available: form.available
                     }])
                     .select()

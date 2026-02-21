@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '@/hooks/use-app';
 import { Order, OrderItem } from '@/types';
+import { supabase } from '@/lib/supabase';
 import { ArrowLeft, Plus, Trash2, Pizza, Search as SearchIcon, MapPin, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';

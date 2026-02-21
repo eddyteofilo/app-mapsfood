@@ -143,11 +143,20 @@ export default function AdminLayout() {
             <Menu className="w-6 h-6" />
           </button>
           <Link to="/admin" className="hidden md:flex items-center gap-2 group">
-            <img
-              src="/logo.png"
-              alt="Logo"
-              className="h-8 w-auto object-contain group-hover:scale-105 transition-transform"
-            />
+            {state.settings.logoUrl ? (
+              <img
+                src={state.settings.logoUrl}
+                alt={state.settings.name}
+                className="h-8 w-auto object-contain group-hover:scale-105 transition-transform"
+              />
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg gradient-hero flex items-center justify-center shadow-glow">
+                  <Pizza className="w-4 h-4 text-white" />
+                </div>
+                <span className="font-display font-bold text-foreground">PizzaDash</span>
+              </div>
+            )}
           </Link>
           <div className="flex items-center gap-3">
             <Link
