@@ -364,7 +364,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       await fetch(settings.webhookUrl, {
         method: 'POST',
-        mode: 'no-cors', // Evita erro de CORS preflight em webhooks simples
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           event,
